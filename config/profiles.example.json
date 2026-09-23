@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "defaultProfile": "main",
+  "stateDir": "./state",
+  "profiles": {
+    "main": {
+      "account": "primary",
+      "workspace": "your-workspace",
+      "user": "your-user-peer",
+      "endpoint": "https://api.honcho.dev/v3",
+      "credentialFile": "./credentials/primary.json"
+    }
+  },
+  "roots": [],
+  "projects": [],
+  "redactPatterns": [],
+  "installation": {
+    "codexHome": "~/.codex",
+    "claudeHome": "~/.claude",
+    "claudeConfigFile": "~/.claude.json"
+  },
+  "recovery": {
+    "codexQueueDirs": [],
+    "codexTranscriptDirs": ["~/.codex/sessions", "~/.codex/archived_sessions"],
+    "claudeTranscriptDirs": ["~/.claude/projects"]
+  }
+}

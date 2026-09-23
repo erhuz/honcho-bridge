@@ -1,0 +1,31 @@
+{
+  "plugin": "claude-honcho",
+  "version": "0.3.2",
+  "source": "Installed source maps; original sources retained and patched only by scripts/build.mjs",
+  "sourceMaps": {
+    "dist/chunk-1nsms6f4.js.map": "c67171cb4ee5b63bfcc3facd57adc168be3c843026c92d60409882ac19f29417",
+    "dist/chunk-1xa1wr00.js.map": "c2332d2f3f35810dfb7aa88504a293febf27f57cde92a6547525ff06cfbe64ab",
+    "dist/chunk-43gww8dc.js.map": "bc7cfb59a6d97f96d06d980566e6f33b779a99909fcea2772adfd23cc2529eb1",
+    "dist/chunk-81cb25yy.js.map": "00a6f1e4fc3044d6bfe6204ccb6008eaf9e616354da782b31bc9fb75eaaabd16",
+    "dist/chunk-acwn3613.js.map": "653d3428b0e87793808e353a9093d47e935a31dc51a67b7049931dbc36f26cfb",
+    "dist/chunk-d99xh4kg.js.map": "797f56e150f71120362bea5a6f34d7cd2b1c8e853e486beae1918be9cdaf9439",
+    "dist/chunk-g0m354bn.js.map": "6a50bb2989df550d537eab3e73c9129202957ca62735ded9aff3935a42511a13",
+    "dist/chunk-mm5vjhpr.js.map": "0ff1654a4e0d23bfe2d089586c755f9f274989560a0fab3ef0e3edf5f3e5e812",
+    "dist/chunk-pdnbydfe.js.map": "ae86b7bcceb63a47a5ed7051a78f6fea3df37dcbbdd0c168c9659ac1312cc8f1",
+    "dist/chunk-qp4ng9m0.js.map": "c54d00874d028cbe5b75ba2955e239f1b79906253581df1c0446c860154fdd1d",
+    "dist/chunk-w3tnmcx7.js.map": "12f9755212fbbb36402725ef27100345d1e32c6437095c85a4f9081829621e2a",
+    "dist/mcp-server.js.map": "5465633faada7ce6034617978d4cfdd0daa08fd00bb52e57ca82c734d724f68d",
+    "dist/skills/backfill-runner.js.map": "33c4855b7256b59b8a932f85d18eefe6326d062fba13f8aff5438f00797754fb",
+    "dist/skills/setup-runner.js.map": "8cc588c737c65b952b4e0c23e1184d7239e79d303c885dd71c4488c17027d174",
+    "dist/skills/status-runner.js.map": "d0d01a3764b2d92d24fa8720303654f5743a2818f1d83e5c576bb434be934397",
+    "dist/hooks/post-tool-use.js.map": "57569f897faeae557cb6f2661088120a50ca29543996e9bc0078a47ee512cc6a",
+    "dist/hooks/pre-compact.js.map": "0eac5a1b6f8aec2ef1ba8908300e0a8a8fce7b159c6ca8bfd91eb12050093fed",
+    "dist/hooks/pre-tool-honcho.js.map": "5c787f57263810ed1ec3c2dec50475f9a84fab83cbc9034cbbfa3b2e16f72551",
+    "dist/hooks/save-user-message.js.map": "c46430e09e7866293fb5da77f97d732accf8d7403696c5a0c613777f88f6bc6a",
+    "dist/hooks/session-end.js.map": "1b5809a0b61e1a003156a4d740b926eadf4ecde8bf16f8b5f17f75cb9e2c5fff",
+    "dist/hooks/session-start.js.map": "c4de0498ad6cd5510ef7617301f7d66b9ecb391f9060c8320bebbb6c97924bf3",
+    "dist/hooks/stop.js.map": "756c5498c1f4a92bc5b9391e3c40712a4b7999f600df8516c42a7a2c68e42e38",
+    "dist/hooks/user-prompt.js.map": "e702164d52c7fbfb287c52f6a191756893af17c77ac14159dda0ee7257e2bcf7"
+  },
+  "codexBundleSha256": "6972908849f00a87d74cae5bdf450206accae21f139bac0e3e4a449362883734"
+}
