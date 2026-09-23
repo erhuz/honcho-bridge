@@ -24,14 +24,14 @@ Those checks cover the existing integration; CLI acceptance remains open.
 | Existing code | Keep or change for v0.1 |
 | --- | --- |
 | `src/cli.mjs` loads runtime before dispatch and prints JSON | Parse/help/version first; add human output, a stable JSON envelope, strict flags and useful exit status. |
-| v1 profiles repeat credential paths and assume personal fallback | v2 accounts own keys; profiles select account/workspace/user; make the default explicit. Bind config and ledger with one registry ID. |
+| v1 profiles repeat credential paths and now require an explicit default | v2 accounts own keys; profiles select account/workspace/user; make the default explicit. Bind config and ledger with one registry ID. |
 | Project resolver and immutable route ledger | Reuse; expose assignment commands and conflict explanations. |
 | Receipt-based message delivery and atomic conclusion claims | Preserve IDs, uncertainty rules, deadlines and complete health reporting. |
-| `scripts/install.py` contains this machine's users, roots and wrappers | Replace public installation with Node edits, an ownership manifest, private backups, conflict checks and guarded removal. |
+| `scripts/install.py` uses a private registry but still requires Python | Replace public installation with Node edits, an ownership manifest, private backups, conflict checks and guarded removal. |
 | Claude recall is built from attributed upstream source | Keep the adapter and its build for v0.1; ship its required runtime assets and notices. |
 | Maintenance doctor only probes profiles | Add local setup/conflict/version checks, offline mode and failing exit status for unhealthy checks. |
-| Private package, no bin or allowlist | Add an executable and test the packed artifact outside the checkout. Current pack contents omit required dist files. |
-| Machine-specific README/SPEC/verification history | Write generic product docs during implementation. Retain historical evidence privately; review Git history before public export. |
+| npm publication blocked; no bin or runtime allowlist | Add an executable and test the packed artifact outside the checkout. Current pack contents omit required dist files. |
+| Source-release README, install guide, license and public metadata are prepared | Keep documentation aligned with the future CLI as it is implemented; retain private configuration outside the repository. |
 
 The old specification is retained in
 [docs/legacy-integration-spec.md](docs/legacy-integration-spec.md). Its outstanding
@@ -128,13 +128,14 @@ the import against copied fixture state first. A real cutover requires old clien
 and writers stopped, the final import, removal of reported legacy integrations,
 new installation, doctor, client approval/reload and in-client status before resume.
 
-Prepare a sanitized public export before pushing: the first commit contains local
-operational names and records, so deleting files at HEAD is insufficient. Preserve
-private records outside the published history. Do not rewrite this local history
+The repository was reinitialized after removing local operational names and
+records from the source tree. Keep private records outside published history and
+review the exact release tree before each publication. Do not rewrite history
 as an incidental implementation step. Check the eventual npm package name/scope
 and GitHub owner at release time; neither is assumed by the executable name.
 
-No GitHub remote, push, npm publication or installation change is part of this plan.
+This plan does not authorize further pushes, npm publication or local installation
+changes. The repository remote is configured separately.
 
 ## Primary references
 

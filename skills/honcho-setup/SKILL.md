@@ -5,7 +5,8 @@ description: Configure and install this Honcho Bridge checkout for Codex and Cla
 
 # Honcho Bridge setup
 
-Work from the user's Honcho Bridge checkout. Read `docs/configuration.md` there
+Work from the user's Honcho Bridge checkout. Use `INSTALL.md` for the source
+installation steps and isolated Python environment. Read `docs/configuration.md` there
 for the supported v1 schema and commands. `SPEC.md` describes a future public CLI;
 do not run its unimplemented commands or convert a working registry to v2.
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -16,7 +16,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 function fixture() {
-  const dir=mkdtempSync(join(tmpdir(),'honcho-test-'));
+  const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho-test-')));
   const profiles=Object.fromEntries(['personal','team_a','team_b'].map(name=>[name,{account:name==='personal'?'personal':'work',workspace:name,user:'fixture-user',endpoint:'https://api.honcho.dev/v3',credentialFile:join(dir,name+'.json')}]));
   const registry={version:1,defaultProfile:'personal',captureFrom:'2026-09-22T00:00:00Z',profiles,roots:['personal','team_a','team_b'].map(profile=>({profile,path:join(dir,profile)})),projects:[]};
   for(const p of registry.roots)mkdirSync(p.path);

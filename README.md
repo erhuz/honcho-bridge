@@ -1,90 +1,122 @@
-# Honcho Bridge
+<p align="center">
+  <img src="docs/assets/logo.png" width="224" height="224" alt="Honcho Bridge logo — a geometric bridge connecting two nodes">
+</p>
 
-Connect Codex and Claude to Honcho through one local bridge. A private JSON
-registry selects user peers, workspaces, accounts, project assignments, credential
-files, state storage, and client locations. No machine-specific identity is built
-into the runtime or installer.
+<h1 align="center">Honcho Bridge</h1>
+<p align="center"><strong>Shared memory. Separate contexts.</strong><br>Connect Codex and Claude Code to Honcho with explicit project routing.</p>
+<p align="center">
+  <a href="INSTALL.md">Install</a> ·
+  <a href="docs/configuration.md">Configure</a> ·
+  <a href="skills/honcho-setup/SKILL.md">LLM setup skill</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
 
-Start with [the configuration example](config/profiles.example.json), follow
-[the setup guide](docs/configuration.md), or give an LLM the
-[setup skill](skills/honcho-setup/SKILL.md). Keep your configured registry and keys
-outside the repository. The installer discovers Node and records explicit paths.
+Honcho Bridge gives your coding assistants access to the same user memory while
+keeping unrelated projects in their assigned workspaces. A private configuration
+file chooses the account, workspace, user peer, credentials, and local paths.
+No daemon, per-project MCP server, or hardcoded personal identity is required.
 
-## Setup
+**Early source release.** Install from a checkout on Linux or macOS with Node 24+
+and Python 3.11+. The installer configures **both** Codex and Claude Code. There
+is no published npm installer or standalone `honcho-bridge` command yet. This is
+an independent community project, not an official Honcho, OpenAI, or Anthropic product.
 
-This checkout uses the v1 registry and requires Node 24+, Git, Python 3, and
-Python's `tomlkit` package. After preparing the registry and credential file:
+## What it does
 
-```sh
-npm ci --ignore-scripts
-npm run check
-python3 scripts/install.py --config ~/.config/honcho/profiles.json
-python3 scripts/install.py --config ~/.config/honcho/profiles.json --apply
-node src/cli.mjs --config ~/.config/honcho/profiles.json status
-node src/cli.mjs --config ~/.config/honcho/profiles.json resolve /path/to/project
-node src/cli.mjs --config ~/.config/honcho/profiles.json doctor
+- **One destination per conversation.** Routes stay fixed when you resume a chat
+  or change directories. Start a new conversation to switch memory areas.
+- **Project-aware routing.** Directory rules, registered Git remotes, and shared
+  Git directories identify repositories and worktrees. Conflicting rules stop access.
+- **Shared user memory across clients.** Codex and Claude use the profile's user
+  peer and retain distinct assistant peers.
+- **Visible delivery state.** Public conversation messages are captured locally;
+  pending and uncertain writes remain visible. Receipt checks prevent blind retries.
+- **Configuration you own.** Identity, credentials, state, routing, and client paths
+  live outside the checkout. Installation supports a preview, backups, and rollback.
+
+```mermaid
+flowchart LR
+    A[Codex hooks + MCP] --> B[Honcho Bridge]
+    C[Claude Code hooks + MCP] --> B
+    D[Private profile configuration] --> B
+    B <--> E[(Local route and receipt ledger)]
+    B --> F[Assigned Honcho workspace]
 ```
 
-The installer previews changes unless `--apply` is supplied. It backs up changed
-files, preserves unrelated client settings, installs the runtime memory skill,
-and points both clients to this checkout and the same explicit configuration.
-It disables Codex native memory and the stock Claude Honcho plugin. Legacy writer
-cleanup uses only the registry's explicit `legacy` paths.
+## Get started
 
-Restart/reload clients after installation and approve hooks if required. A new
-ledger starts paused; enable it after checking the routes using
-`node src/cli.mjs --config /path/to/profiles.json enable`. `doctor` contacts Honcho;
-`status` and `resolve` are local checks. Configuring files does not prove an already
-running client loaded them.
+Clone into a directory you can keep: installed clients point to this checkout.
 
-## Memory behavior
+```sh
+git clone https://github.com/erhuz/honcho-bridge.git
+cd honcho-bridge
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install -r requirements.txt
+npm ci --ignore-scripts
+npm run check
+```
 
-Each conversation keeps its original account, workspace, user and endpoint.
-New unassigned folders use `defaultProfile`. Directory rules, registered remotes,
-and Git common directories identify projects and worktrees. Conflicting rules or
-failed Git inspection stop access. Start a new conversation to change destination.
-Changing an existing profile's identity does not move saved routes.
+Then follow the [installation guide](INSTALL.md) to create your private registry
+and credential file, preview client changes, and verify a paused installation
+before enabling uploads. For assisted setup, give your LLM
+[`skills/honcho-setup/SKILL.md`](skills/honcho-setup/SKILL.md).
 
-Hooks and MCP share one SQLite ledger. Every MCP call requires the current hook's
-`route_id`. Ambient Honcho variables and startup directories do not select an area.
-Missing credentials do not fall back to another account. Credential paths come
-from profiles; secrets remain in private files and are read when needed.
+Already configured? Read [upgrading and rollback](INSTALL.md#upgrading-and-rollback).
+The [configuration reference](docs/configuration.md) covers multiple profiles,
+custom client locations, and legacy recovery paths.
 
-Capture records public user and assistant messages, omits private reasoning and
-tool output, and applies redaction. Only messages at or after `captureFrom` enter
-normal capture. Stable source IDs and receipt checks prevent blind replay after
-uncertain writes. Manual conclusion writes use the same uncertainty safeguards.
-Health warnings remain visible after successful recall.
+## Know where your data goes
 
-Use `pause`, `enable`, `flush`, and `status` through `src/cli.mjs` with the same
-`--config` path. `flush` does not blindly replay uncertain writes. Historical
-`inventory` and `recover` are separate maintenance operations described in the
-[setup guide](docs/configuration.md); recovery requires deliberate review and does
-not delete remote history.
+The bridge sends captured **public user and assistant messages** to the configured
+Honcho endpoint when uploads are enabled. Private reasoning, tool output, and
+recognized injected instructions are excluded. Redaction is best effort; avoid
+putting secrets in conversation text. The local SQLite ledger also holds private
+conversation data, and `pause` stops uploads while local capture continues.
 
-## Verification and rollback
+New ledgers start paused. Every MCP tool call requires the route ID supplied by
+the current conversation hook. A missing credential or changed profile identity
+stops that area's access; the bridge does not switch accounts to recover.
 
-`npm run check` builds the Claude adapter and runs isolated local tests. Live
-verification is separate and can create remote test messages; do not run it as
-ordinary setup. [Verification notes](VERIFICATION.md) distinguish local checks
-from fresh-client and live acceptance.
+This is a single-OS-user tool. Route IDs prevent accidental selection errors;
+they are not authorization tokens against other processes running as your user.
+Read the [security model and reporting policy](SECURITY.md).
 
-Installation prints a private backup directory. Restore unchanged installed files
-with `python3 scripts/install.py --rollback /path/to/backup`. Rollback preserves
-remote memory, credentials not changed by setup, and the conversation ledger.
-Backups can contain private configuration and must stay outside version control.
+## Daily use
 
-## Project status and provenance
+Run from the checkout with the same registry used by your clients:
 
-The public installable `honcho-bridge` CLI and v2 schema remain planned in
-[PLAN.md](PLAN.md) and [SPEC.md](SPEC.md). Those commands are not implemented yet.
-The [legacy contract](docs/legacy-integration-spec.md) records earlier behavior.
+```sh
+node src/cli.mjs --config ~/.config/honcho/profiles.json status
+node src/cli.mjs --config ~/.config/honcho/profiles.json resolve ~/repos/my-project
+node src/cli.mjs --config ~/.config/honcho/profiles.json pause
+node src/cli.mjs --config ~/.config/honcho/profiles.json enable
+```
 
-`vendor/claude` contains adapter 0.3.2 source recovered from source maps, with its
-license and hashes in `PROVENANCE.json`. Builds isolate adapter state, pin session
-names, propagate recall failures, and disable SDK retries. Shared capture and
-delivery replace upstream message writers. Dependencies are pinned in the lockfile.
+`doctor` reads the configured Honcho workspaces. `flush` retries eligible pending
+messages and checks uncertain receipts. Historical `inventory` and `recover` are
+separate maintenance operations, not part of normal setup.
 
-No daemon is required. The OS account is the trust boundary: `route_id` makes the
-caller's selection explicit but does not protect against malicious code running
-as the same OS user.
+## Project status
+
+The current source release includes the shared runtime, 16 MCP tools, client hooks,
+configurable routing, and a Python installer. The [CI workflow](.github/workflows/ci.yml)
+is configured to test Linux/macOS with Node 24/26; check
+[actual workflow runs](https://github.com/erhuz/honcho-bridge/actions/workflows/ci.yml)
+for results. Local tests do not certify a particular desktop client version.
+
+A packaged Node-only installer, configuration commands, and schema v2 are
+**planned**, not available. [PLAN.md](PLAN.md) and [SPEC.md](SPEC.md) describe that
+future work. [Release preparation](docs/releasing.md) lists the remaining checks
+before tagging an alpha.
+
+Bug reports and contributions are welcome. Include versions and sanitized
+reproduction steps; never attach keys, transcripts, or ledger files.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License and attribution
+
+Original code is [MIT licensed](LICENSE). The vendored Claude Honcho adapter is
+copyright Plastic Labs and retains its [MIT license](vendor/claude/LICENSE) and
+[source provenance](vendor/claude/PROVENANCE.json).
+See [third-party notices](THIRD_PARTY_NOTICES.md).

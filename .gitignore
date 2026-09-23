@@ -4,3 +4,11 @@ __pycache__/
 *.sqlite*
 .env
 reports/
+.venv/
+.env.*
+!.env.example
+*.tgz
+.DS_Store
+# Keep real registries, credentials, and local reports outside the checkout.
+config/*.local.json
+credentials/

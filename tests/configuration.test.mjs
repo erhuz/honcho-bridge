@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, realpathSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -14,7 +14,7 @@ const example=JSON.parse(readFileSync(new URL('../config/profiles.example.json',
 const registry=()=>({...structuredClone(example),captureFrom:'2026-09-23T00:00:00Z'});
 
 test('registry resolves portable paths and arbitrary defaults, preserving pinned identities',()=>{
-  const dir=mkdtempSync(join(tmpdir(),'honcho-config-'));
+  const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho-config-')));
   try {
     const input=registry();input.profiles.main.user='another-user';input.roots=[{path:'~/work',profile:'main'}];
     const config=join(dir,'profiles.json');
@@ -42,7 +42,7 @@ test('registry resolves portable paths and arbitrary defaults, preserving pinned
 });
 
 test('custom client installation shares config and state across hooks and MCP, and rolls back',async()=>{
-  const dir=mkdtempSync(join(tmpdir(),'honcho setup '));
+  const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho setup ')));
   const config=join(dir,'custom registry.json'),input=registry();
   input.profiles.main.user='fixture-user';
   input.installation={codexHome:'./clients/codex',claudeHome:'./clients/claude',claudeConfigFile:'./clients/claude.json'};
@@ -80,7 +80,7 @@ test('custom client installation shares config and state across hooks and MCP, a
 });
 
 test('recovery inventories configured queue and transcript directories',async()=>{
-  const dir=mkdtempSync(join(tmpdir(),'honcho-recovery-'));
+  const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho-recovery-')));
   try {
     const input=registry();input.roots=[{path:'./project',profile:'main'}];
     input.recovery={codexQueueDirs:['./old queues'],codexTranscriptDirs:['./transcripts'],claudeTranscriptDirs:[]};

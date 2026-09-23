@@ -1,8 +1,8 @@
-# Configure this checkout
+# Configuration reference
 
 This checkout supports the v1 registry described here. The public CLI and v2 schema
-in `SPEC.md` remain planned. Setup requires Node 24+, Git, Python 3, and Python's
-`tomlkit` package. Runtime hooks use Node directly; no fixed Python path is required.
+in `SPEC.md` remain planned. For first-time setup and prerequisites, follow [INSTALL.md](../INSTALL.md).
+The installer uses the dependency pinned in `requirements.txt`. Runtime hooks use Node directly; no fixed Python path is required.
 
 Copy `config/profiles.example.json` to a private location outside the repository,
 for example `~/.config/honcho/profiles.json`. Edit the workspace and user peer to
