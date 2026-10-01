@@ -29,6 +29,9 @@ an independent community project, not an official Honcho, OpenAI, or Anthropic p
   Git directories identify repositories and worktrees. Conflicting rules stop access.
 - **Shared user memory across clients.** Codex and Claude use the profile's user
   peer and retain distinct assistant peers.
+- **One session per project.** Conversations from all clients share a session
+  named after the primary directory, such as `honcho-bridge`. Existing history can
+  be consolidated with verified copies and retained originals.
 - **Visible delivery state.** Public conversation messages are captured locally;
   pending and uncertain writes remain visible. Receipt checks prevent blind retries.
 - **Configuration you own.** Identity, credentials, state, routing, and client paths

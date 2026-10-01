@@ -23,15 +23,18 @@ reversible client installation, and import of this prototype's local registry an
 ledger. Keep the current 16 MCP tools and Claude recall adapter.
 
 Excluded: HTTP proxy, daemon, desktop UI, OAuth/key issuance, account provisioning,
-automatic updates, remote history migration, generic transcript recovery, Windows,
+automatic updates, generic transcript recovery, Windows,
 and other coding clients. `inventory` and `recover` remain prototype utilities,
 outside the public command surface.
 
 ## II. Invariants
 
-- **I1 — One destination per conversation.** Keep route IDs, remote session IDs and
-  the pinned account/endpoint/workspace/user identity immutable. Project rules,
-  default changes and resumed working directories cannot move existing routes.
+- **I1 — One destination per conversation.** Keep route IDs and the pinned
+  account/endpoint/workspace/user identity immutable. Conversations across all
+  clients use the primary directory's session name. Existing per-conversation
+  sessions cut over directly; retain source mappings for verified history copying.
+  Project rules, default changes and resumed working directories cannot change
+  their assigned account, workspace or user.
   Changing destination requires a new conversation. Configuration changes that
   invalidate an existing identity fail before memory access.
 - **I2 — One local authority.** Hooks, MCP and management commands load the same

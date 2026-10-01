@@ -39,6 +39,7 @@ test('worktrees and registered remotes retain their area; conflicts fail',()=>{
   assert.equal(resolveProject(f.registry,tree).directory,repo);
   const nested=join(repo,'src');mkdirSync(nested);
   assert.equal(resolveProject(f.registry,nested).directory,repo);
+  for(const [i,cwd] of [repo,tree,nested].entries())assert.equal(f.ledger.bind(f.registry,'codex',`worktree-chat-${i}`,resolveProject(f.registry,cwd)).remote_session,'repo');
   git('remote','add','origin','git@example.test:company/repo.git');
   f.registry.projects=[{id:'registered',path:repo,remote:'example.test/company/repo',profile:'team_a'}];
   assert.throws(()=>resolveProject(f.registry,tree),/Conflicting/);
@@ -51,31 +52,61 @@ test('pin survives unknown cwd; rejects known other area and changed identity',(
 });
 test('two clients and two concurrent instances never share route state',()=>{
   const f=fixture();const routes=[f.route(),f.route('claude'),f.route('codex','team_b','another-thread')];
-  assert.equal(new Set(routes.map(r=>r.remote_session)).size,3);
+  assert.equal(new Set(routes.map(r=>r.id)).size,3);
+  assert.deepEqual(routes.map(r=>r.remote_session),['team_a','team_a','team_b']);
   const second=new Ledger(join(f.dir,'state'));const release=f.ledger.lock(routes[0].id);assert.equal(second.lock(routes[0].id),null);release();assert.ok(second.lock(routes[0].id));second.close();f.ledger.close();
 });
-test('sessions use readable project names and UTC time while preserving unique pinned destinations',t=>{
+test('all conversations use the project name without client, time or ledger suffixes',t=>{
   const f=fixture();t.after(()=>f.ledger.close());
-  t.mock.timers.enable({apis:['Date'],now:new Date('2026-10-01T12:34:56.789Z')});
   const first=f.route(),second=f.route('codex','team_a','second-chat'),claude=f.route('claude');
-  assert.equal(first.remote_session,'team_a-codex-2026-10-01T12-34-56-789Z');
-  assert.equal(second.remote_session,first.remote_session+'-2');
-  assert.equal(claude.remote_session,'team_a-claude-2026-10-01T12-34-56-789Z');
-  const other=new Ledger(join(f.dir,'state'));t.after(()=>other.close());
+  assert.deepEqual([first,second,claude].map(r=>r.remote_session),['team_a','team_a','team_a']);
+  const other=new Ledger(join(f.dir,'independent-state'));t.after(()=>other.close());
   const third=other.bind(f.registry,'codex','third-chat',f.project('team_a'));
-  assert.equal(third.remote_session,first.remote_session+'-3');
-  assert.equal(other.bind(f.registry,'codex',first.native_id,resolveProject(f.registry,f.dir)).remote_session,first.remote_session);
-  const legacy=other.bind(f.registry,'codex','legacy-chat',f.project('team_a'),{remoteSession:'codex-existing-hash'});
-  assert.equal(f.ledger.bind(f.registry,'codex','legacy-chat',f.project('team_a')).remote_session,legacy.remote_session);
+  assert.equal(third.remote_session,first.remote_session);
+  assert.equal(f.ledger.bind(f.registry,'codex',first.native_id,resolveProject(f.registry,f.dir)).remote_session,first.remote_session);
+  other.db.prepare('UPDATE routes SET remote_session=? WHERE id=?').run('previous-session',third.id);
+  assert.equal(other.bind(f.registry,'codex',third.native_id,f.project('team_a')).remote_session,'team_a');
+  assert.equal(other.db.prepare('SELECT source FROM session_moves WHERE route_id=?').get(third.id).source,'previous-session');
 });
 test('session labels use the primary directory and satisfy Honcho identifier rules',t=>{
   const f=fixture();t.after(()=>f.ledger.close());
-  for(const [index,name] of ['My App','Ångström & café','项目'].entries()) {
+  for(const [index,name] of ['honcho-bridge','My App','Ångström & café','项目'].entries()) {
     const route=f.ledger.bind(f.registry,'codex',`label-chat-${index}`,{...f.project('team_a'),directory:join(f.dir,name),cwd:join(f.dir,name,'src')});
-    const expected=['my-app','angstrom-cafe','project'][index];
-    assert.ok(route.remote_session.startsWith(`${expected}-codex-`));
+    const expected=['honcho-bridge','my-app','angstrom-cafe','project'][index];
+    assert.equal(route.remote_session,expected);
     assert.equal(SessionIdSchema.parse(route.remote_session),route.remote_session);
   }
+});
+test('project sessions collect messages from separate conversations and clients with independent receipts',async t=>{
+  const f=fixture();t.after(()=>f.ledger.close());f.ledger.enable(true);
+  writeFileSync(f.registry.profiles.team_a.credentialFile,JSON.stringify({apiKey:'fixture'}));
+  const api=new HonchoAPI(f.registry.profiles.team_a),sessions=new Map();
+  api.honcho.peer=async id=>({id});
+  api.honcho.session=async id=>{
+    if(!sessions.has(id))sessions.set(id,{peers:new Set(),messages:[]});
+    const session=sessions.get(id);
+    return {addPeers:async peers=>peers.forEach(p=>session.peers.add(p.id)),addMessages:async messages=>{
+      const receipts=messages.map(m=>({...m,id:`receipt-${session.messages.length+1}-${m.metadata.honcho_source_id}`}));
+      session.messages.push(...receipts);return receipts;
+    }};
+  };
+  api.messages=async id=>sessions.get(id)?.messages??[];
+  api.readSession=id=>({messages:async()=>({items:sessions.get(id)?.messages??[]})});
+  const routes=[f.route(),f.route('claude'),f.route('codex','team_a','another-chat')];
+  const rt={...f,api:()=>api};
+  for(const route of routes)f.ledger.enqueue(route,['user','assistant'].map(role=>({...event(`${route.id}-${role}`),role})));
+  await Promise.all(routes.map(route=>deliver(f.ledger,f.registry,route,api)));
+  assert.deepEqual([...sessions.keys()],['team_a']);
+  assert.deepEqual([...sessions.get('team_a').peers].sort(),['claude','codex','fixture-user']);
+  assert.equal(sessions.get('team_a').messages.length,6);
+  for(const route of routes) {
+    assert.equal(f.ledger.pending(route.id).length,0);
+    const messages=await callMemory(rt,route.client,'get_session_messages',{route_id:route.id});
+    assert.equal(messages.items.length,6);
+    assert.equal(messages.items.filter(m=>m.metadata.honcho_route_id===route.id).length,2);
+    await deliver(f.ledger,f.registry,route,api);
+  }
+  assert.equal(sessions.get('team_a').messages.length,6);
 });
 test('capture omits reasoning, tool results and injected turns; stable across repeats',()=>{
   const raw=['analysis','commentary','final'].map(channel=>JSON.stringify({type:'response_item',timestamp:'2026-09-22T10:00:00Z',payload:{type:'message',role:'assistant',channel,content:[{type:'output_text',text:channel}]}})).join('\n');

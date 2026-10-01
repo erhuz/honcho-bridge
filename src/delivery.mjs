@@ -9,7 +9,7 @@ export async function deliver(ledger,registry,route,api,{allowPaused=false}={}) 
     const pending=ledger.pending(route.id);
     if(!pending.length)return {sent:0};
     await api.ensure(route);
-    const remote=await api.messages(route.remote_session);
+    const remote=await api.messages(route.remote_session,{metadata:{honcho_source_id:{in:pending.map(e=>e.id)}}});
     const receipts=new Map();
     for(const m of remote) {
       const id=m.metadata?.honcho_source_id;

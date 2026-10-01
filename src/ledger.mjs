@@ -1,8 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
-import { join, basename } from 'node:path';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { identity } from './config.mjs';
+import { identity, projectSession, resolveProject } from './config.mjs';
 import { definitiveRejection, errorText } from './api.mjs';
 
 export class Ledger {
@@ -27,12 +27,14 @@ export class Ledger {
       CREATE TABLE IF NOT EXISTS locks (route_id TEXT PRIMARY KEY,pid INTEGER NOT NULL,token TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS diagnostics (route_id TEXT PRIMARY KEY,status TEXT NOT NULL,updated_at TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS operations (id TEXT PRIMARY KEY,state TEXT NOT NULL,result TEXT);
+      CREATE TABLE IF NOT EXISTS session_moves (route_id TEXT NOT NULL,source TEXT NOT NULL,target TEXT NOT NULL,event_cutoff INTEGER NOT NULL,completed INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(route_id,source,target));
       INSERT OR IGNORE INTO settings VALUES ('uploads_enabled','false');`);
     this.transaction(() => {
       const columns=this.db.prepare('PRAGMA table_info(operations)').all().map(c=>c.name);
       if(!columns.includes('route_id'))this.db.exec('ALTER TABLE operations ADD COLUMN route_id TEXT');
       if(!columns.includes('error'))this.db.exec('ALTER TABLE operations ADD COLUMN error TEXT');
       this.db.exec('CREATE INDEX IF NOT EXISTS operations_route ON operations(route_id,state)');
+      if(!this.db.prepare('PRAGMA table_info(session_moves)').all().some(c=>c.name==='event_cutoff'))this.db.exec('ALTER TABLE session_moves ADD COLUMN event_cutoff INTEGER NOT NULL DEFAULT 0');
     });
   }
   close() { this.db.close(); }
@@ -47,7 +49,7 @@ export class Ledger {
     return { ...row, identity: JSON.parse(row.identity) };
   }
   find(client, nativeId) { return this.db.prepare('SELECT id FROM routes WHERE client=? AND native_id=?').get(client, nativeId); }
-  bind(registry, client, nativeId, project, { remoteSession } = {}) {
+  bind(registry, client, nativeId, project) {
     if (!['codex','claude'].includes(client) || typeof nativeId !== 'string' || !/^[a-zA-Z0-9_-]{8,128}$/.test(nativeId)) throw new Error('Missing or invalid native conversation ID');
     return this.transaction(() => {
       const existing = this.find(client, nativeId);
@@ -55,23 +57,25 @@ export class Ledger {
         const route = this.get(existing.id);
         this.validate(registry, route);
         if (project.recognized && route.profile !== project.profile) throw new Error('Conversation destination conflict; start a new conversation for the other area');
-        return route;
+        const original=resolveProject(registry,route.cwd);
+        if(original.profile!==route.profile)throw new Error('Conversation destination conflict; correct the original project assignment');
+        this.assignSession(route,projectSession(original));
+        return this.get(route.id);
       }
       const id = `${client}-${nativeId}`;
       const profile = registry.profiles[project.profile];
       if (!profile) throw new Error('Unknown profile');
       const createdAt = new Date().toISOString();
-      let session = remoteSession;
-      if (!session) {
-        const name = basename(project.directory ?? project.cwd).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^[-_]+|[-_]+$/g, '') || 'project';
-        const base = `${name}-${client}-${createdAt.replace(/[:.]/g, '-')}`;
-        const used = this.db.prepare('SELECT 1 FROM routes WHERE remote_session=? LIMIT 1');
-        session = base;
-        for (let count=2; used.get(session); count++) session = `${base}-${count}`;
-      }
+      const session = projectSession(project);
       this.db.prepare('INSERT INTO routes VALUES (?,?,?,?,?,?,?,?,?)').run(id,client,nativeId,project.profile,JSON.stringify(identity(profile)),project.project,project.cwd,session,createdAt);
       return this.get(id);
     });
+  }
+  assignSession(route,session) {
+    if(route.remote_session===session)return;
+    const cutoff=this.db.prepare('SELECT coalesce(max(rowid),0) AS cutoff FROM events WHERE route_id=?').get(route.id).cutoff;
+    this.db.prepare('INSERT OR IGNORE INTO session_moves (route_id,source,target,event_cutoff) VALUES (?,?,?,?)').run(route.id,route.remote_session,session,cutoff);
+    this.db.prepare('UPDATE routes SET remote_session=? WHERE id=?').run(session,route.id);
   }
   validate(registry, route) {
     const profile = registry.profiles[route.profile];

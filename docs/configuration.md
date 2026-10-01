@@ -44,14 +44,41 @@ routes to refuse access. Add another profile for a new destination. Preserve the
 existing state directory to retain conversation routes and delivery receipts;
 changing the path does not migrate that data.
 
-New conversations use readable Honcho session names such as
-`honcho-bridge-codex-2026-10-01T14-30-00-123Z`. The name combines the primary
-directory, client, and UTC creation time. Git subdirectories and linked worktrees
-use the main repository directory; non-Git conversations use their original
-working directory. Spaces and unsupported characters become hyphens. A numeric
-suffix keeps conversations created at the same time in the same ledger distinct.
-Existing conversations keep their saved session IDs, including older hashed IDs,
-so resuming them continues the same history.
+All conversations in a project share one Honcho session named exactly after the
+primary directory, such as `honcho-bridge`. Session selection is independent of
+the client: all clients use the same project session in the assigned workspace.
+Git subdirectories and linked worktrees use the main repository directory;
+non-Git conversations use their original working directory. Names are lowercased,
+accents are stripped, and spaces and unsupported characters become hyphens. There
+are no client, timestamp, hash, or counter suffixes. Projects with the same
+normalized directory name in the same workspace share a session; separate
+workspaces remain separate. Local routes and delivery receipts remain per conversation.
+Existing conversations switch directly to the project session when resumed. The
+ledger saves the previous source solely so its history can be consolidated. To
+cut over all existing routes immediately and copy their history:
+
+```sh
+node src/cli.mjs --config ~/.config/honcho/profiles.json consolidate
+node src/cli.mjs --config ~/.config/honcho/profiles.json pause
+node src/cli.mjs --config ~/.config/honcho/profiles.json consolidate --apply
+node src/cli.mjs --config ~/.config/honcho/profiles.json enable
+```
+
+The first command previews local mappings without remote requests. Apply creates a
+private SQLite backup in the state directory and switches all routes directly to
+project sessions. It then copies messages with their original authors, timestamps
+and metadata and verifies remote receipts before updating local receipts. Pending
+messages remain queued. Original
+remote sessions and peer conclusions are retained; copied messages disable repeated
+reasoning. All authors are preserved regardless of client. Only sessions mapped in
+the local ledger can be consolidated automatically; unrecognized remote sessions
+are left alone. Stop other writers to the source sessions during consolidation.
+`--profile NAME` limits the operation to one configured profile.
+
+If an upload response is lost, rerunning verifies copies already present. An
+uncertain copy without a complete receipt requires review and is never blindly
+resent. Project routes stay active if a historical copy needs review; rerunning
+uses the saved source mappings. Uploads remain paused until explicitly enabled again.
 
 ## Install and verify
 

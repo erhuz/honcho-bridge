@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.3 — 2026-10-01
+
+- Correct session selection to use only the primary project directory, such as
+  `honcho-bridge`, shared across all clients and conversations.
+- Add explicit consolidation of existing session history with a local backup,
+  preserved authors and timestamps, verified receipts, and retained originals.
+
 ## 0.1.0-alpha.2 — 2026-10-01
 
 - New Honcho sessions use the primary directory, client, and UTC creation time

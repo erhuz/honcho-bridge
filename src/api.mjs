@@ -44,8 +44,8 @@ export class HonchoAPI {
     await session.addPeers([user,assistant]);
     return session;
   }
-  async messages(sessionId) {
-    try { return await (await this.readSession(sessionId).messages({size:100})).toArray(); }
+  async messages(sessionId,filters) {
+    try { return await (await this.readSession(sessionId).messages({size:100,...(filters?{filters}:{})})).toArray(); }
     catch(e) { if(e.status===404)return [];throw e; }
   }
   async add(route,events) {

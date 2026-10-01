@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 export const digest = value => createHash('sha256').update(value).digest('hex');
 export const defaultConfigPath = () => join(homedir(), '.config/honcho/profiles.json');
 export const defaultStateDir = () => join(homedir(), '.local/state/honcho-integration');
+export const projectSession = project => basename(project.directory ?? project.cwd).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^[-_]+|[-_]+$/g, '') || 'project';
 
 export function loadRegistry(path = defaultConfigPath()) {
   return validateRegistry(JSON.parse(readFileSync(path, 'utf8')), path);

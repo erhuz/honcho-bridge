@@ -84,3 +84,18 @@ licenses and upstream provenance are unchanged. Private vulnerability reporting
 remains enabled. Release notes record CI for the release commit. Fresh desktop
 activation and live Honcho acceptance remain unverified; this rehearsal made no
 live Honcho calls.
+
+## Alpha.3 release rehearsal — 2026-10-01
+
+A fresh source copy in a path containing spaces, with a fresh Python environment
+and `npm ci --ignore-scripts`, passed `npm run check` (35 tests) on Linux x86_64,
+Node v26.8.2, and Python 3.14.7. The suite covers installer application and rollback,
+project-only session names, shared histories with separate conversation receipts,
+direct cutover of existing routes, and history consolidation. Migration checks
+cover preserved authors and timestamps, private backups, receipt verification,
+lost responses, uncertain partial copies, rejected requests, and destination guards.
+
+The locked npm audit reported zero known vulnerabilities. Relative Markdown links,
+version consistency, and whitespace checks passed. Release notes record CI for the
+release commit. These checks do not certify fresh desktop activation or additional
+client adapters.
