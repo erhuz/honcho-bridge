@@ -1,31 +1,20 @@
 # Logo
 
-`logo.png` is the repository's bridge-and-terminals mark. Keep clear space around
-it and use descriptive alt text. It is an independent project mark, not an official
-Honcho, OpenAI, or Anthropic logo. The final PNG has an opaque light background for contrast on light and dark pages.
+`logo.png` is the selected Honcho Bridge logo: a light-blue saluting face beside
+the two-line project name on an opaque charcoal background. The PNG is 1774×887;
+preserve its 2:1 aspect ratio and clear space when displaying it.
 
-Created with the built-in image generation tool for this repository. Original
-prompt:
+It is an independent project mark, not an official Honcho, OpenAI, or Anthropic
+logo. Created with the built-in image generation tool using the user-supplied
+Honcho logo as a visual reference. The selected image is used without alteration.
 
-> Create a polished standalone logo mark for an independent open source developer
-> tool called Honcho Bridge, connecting coding assistants to persistent memory.
-> Square 1024x1024 image. A minimal geometric bridge whose two upright pillars and
-> connected arch subtly form an H. Two small terminal-like nodes integrated into
-> the bridge ends, balanced and legible at favicon size. Dark ink navy and warm
-> burnt orange on a clean warm off-white background. Flat vector-like shapes with
-> precise edges, no texture, no gradients, no shadows, no 3D. Strong negative space,
-> quiet technical confidence. Mark centered with generous whitespace. No text, no
-> letters outside the abstract mark, no slogans, no existing company logos. This
-> is a final repository logo asset, not a mockup.
+Generation prompt:
 
-
-Final edit prompt, using the same built-in tool:
-
-> Edit this exact Honcho Bridge logo for its final GitHub README asset. Preserve
-> the bridge and two terminal nodes, their proportions and navy/orange colors
-> exactly. Place the entire mark on a fully opaque warm off-white (#F6F3EC) square
-> background so the navy bridge is readable on both light and dark GitHub pages.
-> Absolutely no transparency in the final image. Keep the mark centered, use
-> modest equal outer margins; the total mark should span about 85% of the square
-> width. No lettering, new elements, shadows or decorations. Output a clean square
-> PNG logo.
+> Use case: logo-brand.
+> Asset type: a redesigned logo concept for HONCHO BRIDGE, an independent developer tool that shares memory between coding assistants.
+> Input image: the user's Honcho logo. Use it as the visual reference for the light powder-blue ink, near-black charcoal background, saluting character, and confident unfussy character. This is a new companion identity for Honcho Bridge.
+> Primary request: the user rejected abstract geometric monograms. Build this redesign around the immediately recognizable saluting-face emoji gesture, 🫡. A real visible hand meeting a brow and a human face are essential. Keep the salute instantly readable and the drawing memorable.
+> Style: considered flat graphic logo, crisp edges, purposeful proportions, uncomplicated shapes, just powder blue approximately #B0D5F8 and charcoal approximately #20201F. Friendly with a little personality, understated and composed rather than goofy or childish.
+> Output: one standalone finished concept, centered with balanced clear space. Opaque solid charcoal background. No gradients, lighting, material effects, grain, 3D, drop shadows, clothing, uniforms, insignia, helmets, stars, robots, brain diagrams, terminals, literal bridges, hexagons, generic network marks, mockups, concept labels or watermarks.
+>
+> Direction: a complete horizontal identity lockup derived from the supplied reference. A refined small powder-blue saluting-face mascot at the left, with its hand clearly meeting its brow. To its right, render the exact two-line wordmark "HONCHO" on the first line and "BRIDGE" on the second, both uppercase, sturdy condensed rounded grotesk lettering, optically spaced, same width, in powder blue. Echo the supplied HONCHO lettering's heavy confident proportions without extraneous ornament. Mark and two-line name must form one cohesive compact logo. Let the salute convey the personality, keep typography clean. No additional text. Wide landscape canvas with generous clear space.

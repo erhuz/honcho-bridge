@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" width="224" height="224" alt="Honcho Bridge logo — a geometric bridge connecting two nodes">
+  <img src="docs/assets/logo.png" width="560" height="280" alt="Honcho Bridge — a light-blue saluting face beside the project name">
 </p>
 
 <h1 align="center">Honcho Bridge</h1>

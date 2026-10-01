@@ -18,7 +18,7 @@ export function validateRegistry(input, path = defaultConfigPath(), home = homed
     if (typeof value !== 'string' || !value.trim()) throw new Error('Invalid configuration path');
     return value === '~' ? home : value.startsWith('~/') ? resolve(home, value.slice(2)) : resolve(dirname(resolve(path)), value);
   };
-  if (registry.version !== 1 || !registry.profiles || typeof registry.defaultProfile !== 'string' || !Object.hasOwn(registry.profiles, registry.defaultProfile)) throw new Error('Unsupported or incomplete Honcho profile registry');
+  if (registry.version !== 1 || !registry.profiles || (registry.defaultProfile !== null && (typeof registry.defaultProfile !== 'string' || !Object.hasOwn(registry.profiles, registry.defaultProfile)))) throw new Error('Unsupported or incomplete Honcho profile registry');
   if (!Number.isFinite(Date.parse(registry.captureFrom))) throw new Error('Invalid capture start timestamp; memory capture refused');
   for (const [id, p] of Object.entries(registry.profiles)) {
     if (!/^[a-z0-9_-]+$/.test(id) || !p.account || !p.workspace || !p.user || !p.credentialFile || !p.endpoint) {
@@ -100,6 +100,7 @@ export function resolveProject(registry, cwd) {
   const profiles = [...new Set(hits.map(h => h.profile))];
   if (profiles.length > 1) throw new Error('Conflicting Honcho project assignments; start only after correcting the registry');
   const profile = profiles[0] ?? registry.defaultProfile;
+  if (profile === null) throw new Error('No Honcho workspace assigned to this folder');
   if (!registry.profiles[profile]) throw new Error('Unknown Honcho profile');
   return { profile, cwd: path, recognized: hits.length > 0, project: hits.find(h => h.project)?.project ?? digest(remote || common || root || path).slice(0, 20), reason: hits[0]?.reason ?? 'default profile fallback' };
 }

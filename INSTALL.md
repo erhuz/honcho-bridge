@@ -54,8 +54,9 @@ Open `~/.config/honcho/profiles.json` in your editor. Replace `your-workspace` a
 `your-user-peer` with your chosen Honcho workspace and user peer. `main` and
 `primary` are local labels; they do not identify a remote account owner.
 
-Keep `defaultProfile` set to the profile intended for unassigned folders. The
-example saves state under `~/.config/honcho/state` and credentials under
+Set `defaultProfile` to the profile intended for unassigned folders, or `null` to
+limit memory to explicitly assigned roots and projects. The example saves state
+under `~/.config/honcho/state` and credentials under
 `~/.config/honcho/credentials/primary.json`: relative paths resolve from the registry,
 not your shell's current directory. `~/` paths are also supported.
 
@@ -172,6 +173,9 @@ Do not convert to the planned v2 schema. Fetch/review updates, rebuild with
 `npm ci --ignore-scripts` and `npm run check`, then preview and reapply installation.
 Repeat the reload and route checks.
 
+Set `defaultProfile` to `null` to restrict memory to the configured roots and
+projects. Unassigned folders cannot capture messages or use another workspace.
+
 To restore a completed installation whose files have not changed afterward:
 
 ```sh
@@ -189,7 +193,7 @@ location. A rollback may restore references to the old checkout; keep it availab
 | --- | --- |
 | `No module named tomlkit` | Activate `.venv` and run `python3 -m pip install -r requirements.txt`. |
 | Missing `dist` module | Run `npm run build` from the checkout. |
-| Unsupported/incomplete registry | Use schema v1 and define an existing `defaultProfile`. |
+| Unsupported/incomplete registry | Use schema v1 and set `defaultProfile` to an existing profile or `null`. |
 | Profile unavailable | Check its credential file and endpoint, then inspect `doctor` output. |
 | Conflicting project assignments | All matching roots, remotes and Git common directories must select one profile. |
 | Pinned destination changed | Restore the original identity or use a new profile and conversation; editing config does not migrate history. |

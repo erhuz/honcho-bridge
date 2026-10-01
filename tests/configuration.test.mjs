@@ -7,11 +7,31 @@ import { execFileSync } from 'node:child_process';
 import { loadRegistry, validateRegistry, resolveProject } from '../src/config.mjs';
 import { runtime } from '../src/runtime.mjs';
 import { inventory } from '../src/recovery.mjs';
+import { handleHook } from '../src/hook.mjs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const example=JSON.parse(readFileSync(new URL('../config/profiles.example.json',import.meta.url)));
 const registry=()=>({...structuredClone(example),captureFrom:'2026-09-23T00:00:00Z'});
+
+test('null default limits memory to assigned workspaces and does not capture unmatched chats',async()=>{
+  const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho-work-only-')));
+  try {
+    const input=registry();input.defaultProfile=null;
+    input.profiles={projecta:structuredClone(input.profiles.main),projectb:structuredClone(input.profiles.main)};
+    input.roots=['projecta','projectb'].map(profile=>({path:join(dir,profile),profile}));input.projects=[];
+    const config=join(dir,'profiles.json');writeFileSync(config,JSON.stringify(input));
+    const rt=runtime({config});
+    try {
+      for(const profile of ['projecta','projectb'])assert.equal(resolveProject(rt.registry,join(dir,profile)).profile,profile);
+      assert.throws(()=>resolveProject(rt.registry,join(dir,'personal')),/No Honcho workspace assigned/);
+      const result=await handleHook(rt,'codex',{session_id:'unmatched-session',cwd:join(dir,'personal'),hook_event_name:'SessionStart'});
+      assert.equal(result.failed,true);assert.equal(result.route,undefined);
+      assert.equal(rt.ledger.find('codex','unmatched-session'),undefined);
+      assert.equal(rt.ledger.db.prepare('SELECT count(*) AS count FROM events').get().count,0);
+    } finally {rt.ledger.close();}
+  } finally {rmSync(dir,{recursive:true,force:true});}
+});
 
 test('registry resolves portable paths and arbitrary defaults, preserving pinned identities',()=>{
   const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho-config-')));

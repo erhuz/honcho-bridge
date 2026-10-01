@@ -15,7 +15,7 @@ The installer does not create keys or accounts.
 | Field | Meaning |
 | --- | --- |
 | `version` | `1` for this implementation. |
-| `defaultProfile` | Profile used for new conversations in unassigned folders. Required; no profile name is inferred. Add it explicitly when upgrading an older registry. |
+| `defaultProfile` | Profile used for new conversations in unassigned folders, or `null` to refuse memory access and capture in those folders. Required; no profile name is inferred. Add it explicitly when upgrading an older registry. |
 | `stateDir` | Directory containing the SQLite ledger and adapter state. Omission preserves the legacy `~/.local/state/honcho-integration` location. |
 | `captureFrom` | ISO timestamp before which normal capture ignores messages. Setup saves the current time if absent. Preserve it when updating an existing installation. |
 | `profiles` | Map of arbitrary profile names to `account`, `workspace`, `user`, `endpoint`, and `credentialFile`. Names use lowercase letters, numbers, `_`, and `-`. |

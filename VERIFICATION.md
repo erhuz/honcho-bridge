@@ -44,3 +44,23 @@ passed. These checks do not constitute a complete security audit.
 
 The Linux/macOS × Node 24/26 workflow is prepared but has not run for these changes.
 Fresh desktop activation and cross-platform release acceptance remain open.
+
+## Alpha release rehearsal — 2026-10-01
+
+A fresh temporary source copy and home passed dependency installation in an
+isolated Python environment, `npm run check` (25 tests), installer preview/apply,
+paused-state verification, explicit project routing with `defaultProfile: null`,
+repeat installation with no changes, and rollback. The checkout path contained a
+space. This run used Linux x86_64, Node v26.8.2, and Python 3.14.7.
+
+The locked npm audit reported zero known vulnerabilities. All 34 local
+documentation links passed. Review of the tracked file list and two-commit history
+found no private configuration, transcripts, ledgers, operational backups, or
+matches for the checked secret-token patterns. Root and upstream MIT notices and
+adapter provenance are retained. GitHub private vulnerability reporting is enabled.
+
+The previous source-preparation commit passed the Linux/macOS × Node 24/26
+[CI matrix](https://github.com/erhuz/honcho-bridge/actions/runs/35881534888).
+The release notes record CI for the release commit. Fresh desktop activation and
+live Honcho acceptance remain unverified; no live service calls were made during
+this rehearsal. These checks do not constitute a complete security audit.
