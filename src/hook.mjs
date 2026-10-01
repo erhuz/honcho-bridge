@@ -69,6 +69,8 @@ export async function handleHook(rt,client,input) {
     if(input.hook_event_name!=='PostToolUse')rt.ledger.diagnostic(route.id,status);
     return {route,context:[descriptor,`Honcho: ${status}.`,context].filter(Boolean).join('\n'),status};
   } catch(e) {
+    // An intentionally unassigned conversation has no memory context to inject.
+    if(e?.code==='HONCHO_UNASSIGNED' && !route && typeof client==='string' && typeof input.session_id==='string' && !rt.ledger.find(client,input.session_id))return {skipped:true,status:'unassigned',context:''};
     const status=errorText(e);
     if(route)rt.ledger.diagnostic(route.id,status);
     return {route,status,failed:true,context:`Honcho memory unavailable: ${status}. Continue the user's work; do not substitute another memory area. Messages already captured remain local.`};
@@ -82,6 +84,7 @@ export async function runHook(args) {
   const rt=runtime(args);
   try {
     const result=await handleHook(rt,args.client,input);
+    if(result.skipped)return;
     if(recallEvents.has(input.hook_event_name))console.log(JSON.stringify({hookSpecificOutput:{hookEventName:input.hook_event_name,additionalContext:result.context},...(result.failed?{systemMessage:result.context}:{})}));
     else if(result.failed)console.log(JSON.stringify({systemMessage:result.context}));
   } finally {rt.ledger.close();}

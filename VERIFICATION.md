@@ -64,3 +64,23 @@ The previous source-preparation commit passed the Linux/macOS × Node 24/26
 The release notes record CI for the release commit. Fresh desktop activation and
 live Honcho acceptance remain unverified; no live service calls were made during
 this rehearsal. These checks do not constitute a complete security audit.
+
+## Alpha.2 release rehearsal — 2026-10-01
+
+A fresh source copy, isolated Python environment, and temporary home passed
+dependency installation and `npm run check` (28 tests) on Linux x86_64, Node
+v26.8.2, and Python 3.14.7. Installer preview/apply, paused state, repeat
+installation, and rollback passed with a checkout path containing a space.
+
+Both clients' hook entrypoints returned no output for an unassigned conversation
+and created readable session names for assigned conversations. Tests also cover
+main-repository naming from worktrees and subdirectories, same-time name
+collisions in a shared ledger, old session mappings, and retained routing warnings.
+
+The locked npm audit reported zero known vulnerabilities. All 34 relative
+documentation links and the whitespace check passed. The tracked file review
+found no private artifacts or matches for the checked secret-token patterns;
+licenses and upstream provenance are unchanged. Private vulnerability reporting
+remains enabled. Release notes record CI for the release commit. Fresh desktop
+activation and live Honcho acceptance remain unverified; this rehearsal made no
+live Honcho calls.

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { loadRegistry, validateRegistry, resolveProject } from '../src/config.mjs';
 import { runtime } from '../src/runtime.mjs';
 import { inventory } from '../src/recovery.mjs';
@@ -14,7 +14,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 const example=JSON.parse(readFileSync(new URL('../config/profiles.example.json',import.meta.url)));
 const registry=()=>({...structuredClone(example),captureFrom:'2026-09-23T00:00:00Z'});
 
-test('null default limits memory to assigned workspaces and does not capture unmatched chats',async()=>{
+test('null default silently skips unassigned conversations in both clients without capture or API calls',async()=>{
   const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho-work-only-')));
   try {
     const input=registry();input.defaultProfile=null;
@@ -24,13 +24,50 @@ test('null default limits memory to assigned workspaces and does not capture unm
     const rt=runtime({config});
     try {
       for(const profile of ['projecta','projectb'])assert.equal(resolveProject(rt.registry,join(dir,profile)).profile,profile);
-      assert.throws(()=>resolveProject(rt.registry,join(dir,'personal')),/No Honcho workspace assigned/);
-      const result=await handleHook(rt,'codex',{session_id:'unmatched-session',cwd:join(dir,'personal'),hook_event_name:'SessionStart'});
-      assert.equal(result.failed,true);assert.equal(result.route,undefined);
-      assert.equal(rt.ledger.find('codex','unmatched-session'),undefined);
+      assert.throws(()=>resolveProject(rt.registry,join(dir,'personal')),{code:'HONCHO_UNASSIGNED'});
+      let calls=0;rt.api=()=>{calls++;throw new Error('Unexpected remote request');};rt.ledger.enable(true);
+      for(const client of ['codex','claude'])for(const hook_event_name of ['SessionStart','UserPromptSubmit','PostToolUse','Stop','PreCompact']) {
+        const hookInput={session_id:'unmatched-session',cwd:join(dir,'personal'),hook_event_name};
+        const result=await handleHook(rt,client,hookInput);
+        assert.deepEqual(result,{skipped:true,status:'unassigned',context:''});
+        assert.equal(rt.ledger.find(client,'unmatched-session'),undefined);
+        const child=spawnSync(process.execPath,[resolve('src/hook.mjs'),'--config',config,'--client',client],{input:JSON.stringify(hookInput),encoding:'utf8'});
+        assert.equal(child.status,0,child.stderr);assert.equal(child.stdout,'');
+      }
+      assert.equal(calls,0);
       assert.equal(rt.ledger.db.prepare('SELECT count(*) AS count FROM events').get().count,0);
+      assert.equal(rt.ledger.db.prepare('SELECT count(*) AS count FROM diagnostics').get().count,0);
+
+      // A new assignment is picked up on the next hook without reinstalling.
+      rt.ledger.enable(false);input.roots.push({path:join(dir,'personal'),profile:'projecta'});
+      writeFileSync(config,JSON.stringify(input));
+      const active=JSON.parse(execFileSync(process.execPath,[resolve('src/hook.mjs'),'--config',config,'--client','codex'],{input:JSON.stringify({session_id:'unmatched-session',cwd:join(dir,'personal'),hook_event_name:'SessionStart'}),encoding:'utf8'}));
+      assert.match(active.hookSpecificOutput.additionalContext,/<honcho-route>/);
     } finally {rt.ledger.close();}
   } finally {rmSync(dir,{recursive:true,force:true});}
+});
+
+test('silent unassigned hooks preserve warnings for pinned conversations and routing conflicts',async()=>{
+  const dir=realpathSync(mkdtempSync(join(tmpdir(),'honcho-hook-warning-')));
+  const input=registry();input.defaultProfile=null;input.roots=[{path:join(dir,'assigned'),profile:'main'}];
+  const config=join(dir,'profiles.json');writeFileSync(config,JSON.stringify(input));
+  const rt=runtime({config});
+  try {
+    for(const client of ['codex','claude']) {
+      const hookInput={session_id:'existing-session',cwd:join(dir,'assigned'),hook_event_name:'SessionStart'};
+      const assigned=await handleHook(rt,client,hookInput);assert.match(assigned.context,/<honcho-route>/);
+      rt.registry.roots=[];
+      const removed=await handleHook(rt,client,hookInput);
+      assert.equal(removed.failed,true);assert.match(removed.context,/Honcho memory unavailable: No Honcho workspace assigned/);
+      rt.registry.roots=input.roots;
+      const moved=await handleHook(rt,client,{...hookInput,cwd:join(dir,'unassigned')});
+      assert.equal(moved.failed,true);assert.equal(moved.skipped,undefined);
+    }
+    rt.registry.profiles.other=structuredClone(rt.registry.profiles.main);
+    rt.registry.roots.push({path:join(dir,'assigned'),profile:'other'});
+    const conflict=await handleHook(rt,'codex',{session_id:'conflict-session',cwd:join(dir,'assigned'),hook_event_name:'SessionStart'});
+    assert.equal(conflict.failed,true);assert.match(conflict.context,/Conflicting Honcho project assignments/);
+  } finally {rt.ledger.close();rmSync(dir,{recursive:true,force:true});}
 });
 
 test('registry resolves portable paths and arbitrary defaults, preserving pinned identities',()=>{

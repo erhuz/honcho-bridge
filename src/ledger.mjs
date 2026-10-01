@@ -1,8 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { digest, identity } from './config.mjs';
+import { identity } from './config.mjs';
 import { definitiveRejection, errorText } from './api.mjs';
 
 export class Ledger {
@@ -60,8 +60,16 @@ export class Ledger {
       const id = `${client}-${nativeId}`;
       const profile = registry.profiles[project.profile];
       if (!profile) throw new Error('Unknown profile');
-      const session = remoteSession || `${client}-${digest(nativeId).slice(0,32)}`;
-      this.db.prepare('INSERT INTO routes VALUES (?,?,?,?,?,?,?,?,?)').run(id,client,nativeId,project.profile,JSON.stringify(identity(profile)),project.project,project.cwd,session,new Date().toISOString());
+      const createdAt = new Date().toISOString();
+      let session = remoteSession;
+      if (!session) {
+        const name = basename(project.directory ?? project.cwd).normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^[-_]+|[-_]+$/g, '') || 'project';
+        const base = `${name}-${client}-${createdAt.replace(/[:.]/g, '-')}`;
+        const used = this.db.prepare('SELECT 1 FROM routes WHERE remote_session=? LIMIT 1');
+        session = base;
+        for (let count=2; used.get(session); count++) session = `${base}-${count}`;
+      }
+      this.db.prepare('INSERT INTO routes VALUES (?,?,?,?,?,?,?,?,?)').run(id,client,nativeId,project.profile,JSON.stringify(identity(profile)),project.project,project.cwd,session,createdAt);
       return this.get(id);
     });
   }

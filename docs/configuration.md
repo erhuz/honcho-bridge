@@ -32,11 +32,26 @@ absolute paths so client startup directories cannot affect routing. `--home PATH
 on the installer changes the home used for tilde expansion and default client
 paths; it is useful for isolated setup tests.
 
+With `defaultProfile: null`, hooks return silently for unassigned conversations
+that have no existing memory route. They add no context or warning to the client,
+capture no messages, and make no Honcho API calls. Hooks remain installed and read
+the registry on each invocation, so new assignments take effect without reinstalling.
+Conflicting assignments and failures affecting an existing route still produce warnings.
+
 All matching rules must agree. Existing conversations retain their assigned
 identity; changing a profile's account, workspace, user or endpoint causes those
 routes to refuse access. Add another profile for a new destination. Preserve the
 existing state directory to retain conversation routes and delivery receipts;
 changing the path does not migrate that data.
+
+New conversations use readable Honcho session names such as
+`honcho-bridge-codex-2026-10-01T14-30-00-123Z`. The name combines the primary
+directory, client, and UTC creation time. Git subdirectories and linked worktrees
+use the main repository directory; non-Git conversations use their original
+working directory. Spaces and unsupported characters become hyphens. A numeric
+suffix keeps conversations created at the same time in the same ledger distinct.
+Existing conversations keep their saved session IDs, including older hashed IDs,
+so resuming them continues the same history.
 
 ## Install and verify
 

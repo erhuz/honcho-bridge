@@ -12,6 +12,7 @@ import { callMemory } from '../src/bridge.mjs';
 import { handleHook } from '../src/hook.mjs';
 import { compareHistory } from '../src/recovery.mjs';
 import { HonchoAPI } from '../src/api.mjs';
+import { SessionIdSchema } from '@honcho-ai/sdk/dist/validation.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
@@ -35,6 +36,9 @@ test('worktrees and registered remotes retain their area; conflicts fail',()=>{
   const git=(...args)=>execFileSync('git',['-C',repo,...args],{stdio:'pipe'});
   git('init');git('-c','user.name=Test','-c','user.email=test@example.test','commit','--allow-empty','-m','fixture');git('worktree','add',tree);
   assert.equal(resolveProject(f.registry,tree).profile,'team_b');
+  assert.equal(resolveProject(f.registry,tree).directory,repo);
+  const nested=join(repo,'src');mkdirSync(nested);
+  assert.equal(resolveProject(f.registry,nested).directory,repo);
   git('remote','add','origin','git@example.test:company/repo.git');
   f.registry.projects=[{id:'registered',path:repo,remote:'example.test/company/repo',profile:'team_a'}];
   assert.throws(()=>resolveProject(f.registry,tree),/Conflicting/);
@@ -49,6 +53,29 @@ test('two clients and two concurrent instances never share route state',()=>{
   const f=fixture();const routes=[f.route(),f.route('claude'),f.route('codex','team_b','another-thread')];
   assert.equal(new Set(routes.map(r=>r.remote_session)).size,3);
   const second=new Ledger(join(f.dir,'state'));const release=f.ledger.lock(routes[0].id);assert.equal(second.lock(routes[0].id),null);release();assert.ok(second.lock(routes[0].id));second.close();f.ledger.close();
+});
+test('sessions use readable project names and UTC time while preserving unique pinned destinations',t=>{
+  const f=fixture();t.after(()=>f.ledger.close());
+  t.mock.timers.enable({apis:['Date'],now:new Date('2026-10-01T12:34:56.789Z')});
+  const first=f.route(),second=f.route('codex','team_a','second-chat'),claude=f.route('claude');
+  assert.equal(first.remote_session,'team_a-codex-2026-10-01T12-34-56-789Z');
+  assert.equal(second.remote_session,first.remote_session+'-2');
+  assert.equal(claude.remote_session,'team_a-claude-2026-10-01T12-34-56-789Z');
+  const other=new Ledger(join(f.dir,'state'));t.after(()=>other.close());
+  const third=other.bind(f.registry,'codex','third-chat',f.project('team_a'));
+  assert.equal(third.remote_session,first.remote_session+'-3');
+  assert.equal(other.bind(f.registry,'codex',first.native_id,resolveProject(f.registry,f.dir)).remote_session,first.remote_session);
+  const legacy=other.bind(f.registry,'codex','legacy-chat',f.project('team_a'),{remoteSession:'codex-existing-hash'});
+  assert.equal(f.ledger.bind(f.registry,'codex','legacy-chat',f.project('team_a')).remote_session,legacy.remote_session);
+});
+test('session labels use the primary directory and satisfy Honcho identifier rules',t=>{
+  const f=fixture();t.after(()=>f.ledger.close());
+  for(const [index,name] of ['My App','Ångström & café','项目'].entries()) {
+    const route=f.ledger.bind(f.registry,'codex',`label-chat-${index}`,{...f.project('team_a'),directory:join(f.dir,name),cwd:join(f.dir,name,'src')});
+    const expected=['my-app','angstrom-cafe','project'][index];
+    assert.ok(route.remote_session.startsWith(`${expected}-codex-`));
+    assert.equal(SessionIdSchema.parse(route.remote_session),route.remote_session);
+  }
 });
 test('capture omits reasoning, tool results and injected turns; stable across repeats',()=>{
   const raw=['analysis','commentary','final'].map(channel=>JSON.stringify({type:'response_item',timestamp:'2026-09-22T10:00:00Z',payload:{type:'message',role:'assistant',channel,content:[{type:'output_text',text:channel}]}})).join('\n');

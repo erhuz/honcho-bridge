@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.2 — 2026-10-01
+
+- New Honcho sessions use the primary directory, client, and UTC creation time
+  instead of a hash. Existing session mappings stay pinned to their saved history.
+- Hooks quietly skip unassigned conversations when `defaultProfile` is `null`,
+  without injecting unavailable-memory messages. Conflicts and failures affecting
+  existing memory routes remain visible.
+
 ## 0.1.0-alpha.1 — 2026-10-01
 
 First alpha source release. Install from the Git tag; no npm package is published.

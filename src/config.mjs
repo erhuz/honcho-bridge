@@ -1,6 +1,6 @@
 import { readFileSync, realpathSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve, sep, dirname } from 'node:path';
+import { join, resolve, sep, dirname, basename } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
@@ -100,9 +100,10 @@ export function resolveProject(registry, cwd) {
   const profiles = [...new Set(hits.map(h => h.profile))];
   if (profiles.length > 1) throw new Error('Conflicting Honcho project assignments; start only after correcting the registry');
   const profile = profiles[0] ?? registry.defaultProfile;
-  if (profile === null) throw new Error('No Honcho workspace assigned to this folder');
+  if (profile === null) throw Object.assign(new Error('No Honcho workspace assigned to this folder'), {code:'HONCHO_UNASSIGNED'});
   if (!registry.profiles[profile]) throw new Error('Unknown Honcho profile');
-  return { profile, cwd: path, recognized: hits.length > 0, project: hits.find(h => h.project)?.project ?? digest(remote || common || root || path).slice(0, 20), reason: hits[0]?.reason ?? 'default profile fallback' };
+  const directory = common && basename(common) === '.git' ? dirname(common) : root || path;
+  return { profile, cwd: path, directory, recognized: hits.length > 0, project: hits.find(h => h.project)?.project ?? digest(remote || common || root || path).slice(0, 20), reason: hits[0]?.reason ?? 'default profile fallback' };
 }
 
 export function identity(profile) {
